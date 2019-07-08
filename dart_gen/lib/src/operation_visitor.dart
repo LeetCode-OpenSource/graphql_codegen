@@ -7,7 +7,8 @@ import 'scalar_type_mapping.dart';
 import 'tap.dart';
 
 class FieldMeta {
-  FieldMeta(this.fieldName, this.name, this.isList, this.isMaybe, this.isEnum);
+  const FieldMeta(this.fieldName, this.name, this.isList, this.isMaybe,
+      this.isEnum, this.isUnion);
 
   final String name;
 
@@ -18,11 +19,14 @@ class FieldMeta {
   final bool isMaybe;
 
   final bool isEnum;
+
+  final bool isUnion;
 }
 
 class OperationVisitor extends SimpleVisitor {
   OperationVisitor(final this.typeMap, {Tap tap}) : super(tap: tap) {
     _generateEnums();
+    // _generateUnions();
   }
 
   static FieldMeta findDeepOfType(dynamic def) {
@@ -30,9 +34,13 @@ class OperationVisitor extends SimpleVisitor {
     var isList = false;
     var isMaybe = true;
     var isEnum = false;
+    var isUnion = false;
     while (true) {
       if (result['kind'] == 'ENUM') {
         isEnum = true;
+      }
+      if (result['kind'] == 'UNION') {
+        isUnion = true;
       }
       if (result['kind'] == 'NON_NULL') {
         isMaybe = true;
@@ -46,7 +54,8 @@ class OperationVisitor extends SimpleVisitor {
         break;
       }
     }
-    return FieldMeta(def['name'], result['name'], isList, isMaybe, isEnum);
+    return FieldMeta(
+        def['name'], result['name'], isList, isMaybe, isEnum, isUnion);
   }
 
   static Map<String, Map<String, dynamic>> _makeSubType(
@@ -76,12 +85,48 @@ class OperationVisitor extends SimpleVisitor {
         return fieldVisitor;
       }
     }).where((visitor) => visitor != null);
-
+    final String fieldsInitialization = selectionResults
+        .map((visitor) => 'this.${visitor.fieldName}')
+        .join(', ');
+    final String toJsonImpl = selectionResults.map((visitor) {
+      final field = visitor.isScalar
+          ? visitor.fieldName
+          : visitor.graphqlTypeMeta.isList
+              ? 'List<dynamic>.from(${visitor.fieldName}.map((value) => ${visitor.graphqlTypeMeta.isEnum ? '${visitor.graphqlTypeMeta.name}Values.reverseMap[value]' : 'value.toJson()'}))'
+              : visitor.graphqlTypeMeta.isEnum
+                  ? '${visitor.graphqlTypeMeta.name}Values.reverseMap[${visitor.fieldName}]'
+                  : '${visitor.fieldName}.toJson()';
+      return '\'${visitor.fieldName}\': $field';
+    }).join(',\n');
+    final String toJson = '''
+      Map<String, dynamic> toJson() => {
+        $toJsonImpl
+      };
+    ''';
+    final String fromJsonImpl = selectionResults.map((visitor) {
+      final jsonContent = visitor.graphqlTypeMeta.isList
+          ? 'List<${visitor.graphqlTypeMeta.name}>.from(json[\'${visitor.fieldName}\'].map((field) => ${visitor.graphqlTypeMeta.isEnum ? '${visitor.graphqlTypeMeta.name}Values.map[field]' : '${visitor.graphqlTypeMeta.name}.fromJson(field)'}))'
+          : visitor.graphqlTypeMeta.isEnum
+              ? '${visitor.graphqlTypeMeta.name}Values.map[${visitor.fieldName}]'
+              : 'json[\'${visitor.fieldName}\']';
+      return '${visitor.fieldName}: $jsonContent';
+    }).join(',\n');
+    final String fromJsonFactory = '''
+      factory $className.fromJson(Map<String, dynamic> json) => $className(
+        $fromJsonImpl
+      );
+    ''';
     return '''
-    class $className {
-      ${selectionResults.map((visitor) => visitor.schemaDef).where((def) => def.isNotEmpty).join("\n")}
-    }
-    ${selectionResults.map((visitor) => visitor.getResult()).join("\n")}
+      class $className {
+        $className({$fieldsInitialization});
+
+        $fromJsonFactory
+
+        ${selectionResults.map((visitor) => visitor.schemaDef).where((def) => def.isNotEmpty).join("\n")}
+
+        $toJson
+      }
+      ${selectionResults.map((visitor) => visitor.getResult()).join("\n")}
     ''';
   }
 
@@ -98,13 +143,13 @@ class OperationVisitor extends SimpleVisitor {
 
   void _generateEnums() {
     _result += '''
-class EnumValues<T> {
-  const EnumValues(this.map, this.reverseMap);
+      class EnumValues<T> {
+        const EnumValues(this.map, this.reverseMap);
 
-  final Map<String, T> map;
-  final Map<T, String> reverseMap;
-}
-        ''';
+        final Map<String, T> map;
+        final Map<T, String> reverseMap;
+      }
+    ''';
     typeMap.removeWhere((key, _) => key.startsWith('__'));
     typeMap.forEach((typename, typeMeta) {
       if (typeMeta['kind'] == 'ENUM') {
@@ -129,14 +174,42 @@ class EnumValues<T> {
           return '$enumName.${name.toUpperCase()}: \'$name\'';
         }).join(',\n');
         _result += '''
-enum $enumName {
-  $enumFields
-}
-const ${enumName}Values = EnumValues({
-  $enumValuesMap
-}, {
-  $enumReveresValuesMap
-});
+          enum $enumName {
+            $enumFields
+          }
+          const ${enumName}Values = EnumValues({
+            $enumValuesMap
+          }, {
+            $enumReveresValuesMap
+          });
+        ''';
+      }
+    });
+  }
+
+  void _generateUnions() {
+    typeMap.forEach((typename, typemeta) {
+      if (typemeta['kind'] == 'UNION') {
+        final List<dynamic> possibleTypes = typemeta['possibleTypes'];
+        final String castMethods = possibleTypes.map((type) {
+          final String typeName = type['name'];
+          return '''
+            $typeName castTo$typeName() {
+              if (this._value['__typename'] != '$typeName') {
+                return null;
+              }
+              return $typeName.fromJson(_value);
+            }
+          ''';
+        }).join('\n');
+        _result += '''
+        class ${capitalizeUpperCase(typename)} {
+          const ${capitalizeUpperCase(typename)}(this._value);
+
+          final Map<String, dynamic> _value;
+
+          $castMethods
+        }
         ''';
       }
     });
@@ -173,11 +246,11 @@ const ${enumName}Values = EnumValues({
       return '$dartType ${variable.variable.name};';
     }).join('\n');
     return '''
-    class ${capitalizeUpperCase(defination.name)}Variable {
-      ${capitalizeUpperCase(defination.name)}Variable({$constructorParams});
+      class ${capitalizeUpperCase(defination.name)}Variable {
+        ${capitalizeUpperCase(defination.name)}Variable({$constructorParams});
 
-      $fieldDeclarion
-    }
+        $fieldDeclarion
+      }
     ''';
   }
 

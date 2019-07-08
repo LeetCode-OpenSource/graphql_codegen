@@ -24,9 +24,13 @@ class FieldVisitor extends SimpleVisitor {
 
   String schemaName;
 
+  String fieldName;
+
   String _result = '';
 
   String _schemaDef;
+
+  bool isScalar = false;
 
   String get schemaDef {
     return _schemaDef;
@@ -39,6 +43,7 @@ class FieldVisitor extends SimpleVisitor {
 
   @override
   List<FieldElement> visitField(FieldElement field) {
+    fieldName = field.name;
     if (field.selectionSet != null) {
       final childFiledsResults = OperationVisitor.generateFromSelection(
           schemaName,
@@ -49,9 +54,10 @@ class FieldVisitor extends SimpleVisitor {
       _result += childFiledsResults;
     } else {
       final fieldMeta = OperationVisitor.findDeepOfType(subTypeMap[field.name]);
-      final typeName = fieldMeta.isEnum
+      final typeName = fieldMeta.isEnum || fieldMeta.isUnion
           ? '${capitalizeUpperCase(fieldMeta.name)}'
           : ScalarTypeMapping[fieldMeta.name];
+      isScalar = !fieldMeta.isEnum && !fieldMeta.isUnion;
       if (fieldMeta.isList) {
         _schemaDef = 'List<$typeName> ${field.name};\n';
       } else {

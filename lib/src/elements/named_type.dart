@@ -1,14 +1,17 @@
-import 'package:graphql_codegen/src/elements/element.dart';
-import 'package:graphql_codegen/src/elements/element_kind.dart';
-import 'package:graphql_codegen/src/elements/visitor.dart';
 import 'package:graphql_parser/graphql_parser.dart';
 
+import 'element.dart';
+import 'element_kind.dart';
+import 'visitor.dart';
+
 class NamedTypeElement extends Element {
-  NamedTypeElement(this._named);
+  NamedTypeElement(this._named, this.isNullable) : super();
 
   final TypeNameContext _named;
 
   final kind = ElementKind.NamedType;
+
+  final bool isNullable;
 
   @override
   String source() {
@@ -16,5 +19,5 @@ class NamedTypeElement extends Element {
   }
 
   @override
-  accept(ElementVisitor visitor) { }
+  accept(ElementVisitor visitor) {}
 }

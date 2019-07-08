@@ -11,8 +11,8 @@ class InlineFragmentElement extends SelectionElement {
       : super(selection, parent) {
     _inlineFragment = selection.inlineFragment;
     if (_inlineFragment.typeCondition.typeName != null) {
-      _typeCondition = NamedTypeElement(
-          selection.inlineFragment.typeCondition.typeName, true);
+      _typeCondition =
+          NamedTypeElement(selection.inlineFragment.typeCondition.typeName);
     }
     if (_inlineFragment.selectionSet != null) {
       _selectionSet = SelectionSetElement(_inlineFragment.selectionSet);

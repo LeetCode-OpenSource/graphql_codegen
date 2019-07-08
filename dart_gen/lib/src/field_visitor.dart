@@ -1,8 +1,9 @@
 import 'package:graphql_ast_visitor/graphql_ast_visitor.dart';
 
 import 'capitalize_upper_case.dart';
-import 'operation_visitor.dart';
+import 'field_meta.dart';
 import 'scalar_type_mapping.dart';
+import 'utils.dart';
 
 class FieldVisitor extends SimpleVisitor {
   FieldVisitor(
@@ -45,7 +46,7 @@ class FieldVisitor extends SimpleVisitor {
   List<FieldElement> visitField(FieldElement field) {
     fieldName = field.name;
     if (field.selectionSet != null) {
-      final childFiledsResults = OperationVisitor.generateFromSelection(
+      final childFiledsResults = generateFromSelection(
           schemaName,
           operationName,
           graphqlTypeMeta.name,
@@ -53,11 +54,11 @@ class FieldVisitor extends SimpleVisitor {
           typeMap);
       _result += childFiledsResults;
     } else {
-      final fieldMeta = OperationVisitor.findDeepOfType(subTypeMap[field.name]);
-      final typeName = fieldMeta.isEnum || fieldMeta.isUnion
+      final fieldMeta = findDeepOfType(subTypeMap[field.name]);
+      final typeName = fieldMeta.isEnum
           ? '${capitalizeUpperCase(fieldMeta.name)}'
           : ScalarTypeMapping[fieldMeta.name];
-      isScalar = !fieldMeta.isEnum && !fieldMeta.isUnion;
+      isScalar = !fieldMeta.isEnum;
       if (fieldMeta.isList) {
         _schemaDef = 'List<$typeName> ${field.name};\n';
       } else {

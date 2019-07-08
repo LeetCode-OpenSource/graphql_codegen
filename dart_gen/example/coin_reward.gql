@@ -1,0 +1,6 @@
+fragment CoinReward on ScoreNode {
+  id
+  score
+  description
+  date
+}

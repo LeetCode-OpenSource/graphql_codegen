@@ -5,14 +5,12 @@ import 'element_kind.dart';
 import 'visitor.dart';
 
 class NamedTypeElement extends Element {
-  NamedTypeElement(this._named, this.isNullable) : super();
+  NamedTypeElement(this._named) : super();
 
   final TypeNameContext _named;
 
   @override
   final kind = ElementKind.NamedType;
-
-  final bool isNullable;
 
   @override
   String source() {

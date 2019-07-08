@@ -10,8 +10,7 @@ import 'visitor.dart';
 class FragmentDefinationElement extends DefinitionElement {
   FragmentDefinationElement(this._defination) : super(_defination) {
     if (_defination.typeCondition != null) {
-      _typeCondition =
-          NamedTypeElement(_defination.typeCondition.typeName, true);
+      _typeCondition = NamedTypeElement(_defination.typeCondition.typeName);
     }
     if (_defination.directives.isNotEmpty) {
       _directives = _defination.directives

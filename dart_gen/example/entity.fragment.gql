@@ -1,0 +1,87 @@
+fragment feedEntityNode on EntityNode {
+  ... on UserNode {
+    username
+    profile {
+      userSlug
+      realName
+    }
+  }
+
+  ... on QuestionNode {
+    questionFrontendId
+    title
+    titleSlug
+    translatedTitle
+  }
+
+  ... on FeedArticleNode {
+    article {
+      title
+      slug
+    }
+    articleQuestion: question {
+      questionFrontendId
+      title
+      titleSlug
+      translatedTitle
+    }
+  }
+
+  ... on FeedSubmissionNode {
+    status
+    lang
+    submitTime
+    question {
+      questionFrontendId
+      title
+      translatedTitle
+      titleSlug
+    }
+  }
+
+  ... on JobsCompanyNode {
+    name
+    nameSlug
+  }
+
+  ... on ProblemCommentNode {
+    question {
+      questionFrontendId
+      title
+      titleSlug 
+      translatedTitle
+    }
+    comment {
+      id
+    }
+  }
+
+  ... on FeedArticleCommentNode {
+    article {
+      title
+      slug
+    }
+    articleQuestion: question {
+      questionFrontendId
+      title
+      titleSlug
+      translatedTitle
+    } 
+    comment {
+      id
+    }
+  }
+
+  ... on CommunityTopicNode {
+    id
+    title
+  }
+
+  ... on CommentNode {
+    commentId: id
+    topic {
+      id
+      title
+    }
+  }
+}

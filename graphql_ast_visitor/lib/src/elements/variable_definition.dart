@@ -4,6 +4,7 @@ import 'element.dart';
 import 'element_kind.dart';
 import 'named_type.dart';
 import 'operation_defination.dart';
+import 'utils.dart';
 import 'value.dart';
 import 'variable.dart';
 import 'visitor.dart';
@@ -15,8 +16,10 @@ class VariableDefinitionElement extends Element {
     }
 
     if (_variableDefination.type != null) {
-      _type = NamedTypeElement(_variableDefination.type.typeName,
-          _variableDefination.type.isNullable);
+      final typeMeta = getTypeMeta(_variableDefination.type);
+      isNullable = typeMeta.isNullable;
+      isList = typeMeta.isList;
+      _type = NamedTypeElement(typeMeta.typeName);
     }
 
     if (_variableDefination.defaultValue != null) {
@@ -48,6 +51,10 @@ class VariableDefinitionElement extends Element {
   ValueElement get defaultValue {
     return _defaultValue;
   }
+
+  bool isNullable = false;
+
+  bool isList = false;
 
   @override
   String source() {

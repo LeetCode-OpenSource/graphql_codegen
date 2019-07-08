@@ -1,0 +1,19 @@
+query userFeed($userSlug: String!, $subType: ActivitySubType!, $page: Int = 0, $numPerPage: Int = 15) {
+  feed(userSlug: $userSlug, subType: $subType, pageNumber: $page, resultPerPage: $numPerPage) {
+    uuid
+    verb
+    actors {
+      ...feedEntityNode
+    }
+
+    actorNums
+    obj {
+      ...feedEntityNode
+    }
+
+    target {
+      ...feedEntityNode
+    }
+    updatedAt
+  }
+}

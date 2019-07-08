@@ -1,0 +1,47 @@
+fragment TopicsList on TopicConnection {
+  totalNum
+  edges {
+    node {
+      id
+      title
+      commentCount
+      viewCount
+      pinned
+      tags {
+        name
+        slug
+      }
+      post {
+        id
+        voteCount
+        creationDate
+        author {
+          username
+          profile {
+            userSlug
+            userAvatar
+          }
+        }
+        status
+        coinRewards {
+          ...CoinReward
+        }
+      }
+      lastComment {
+        id
+        post {
+          id
+          author {
+            username
+            profile {
+              userSlug
+            }
+          }
+          peek
+          creationDate
+        }
+      }
+    }
+    cursor
+  }
+}

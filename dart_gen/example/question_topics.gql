@@ -1,0 +1,19 @@
+query questionTopicsList(
+  $questionId: String!
+  $orderBy: TopicSortingOption
+  $skip: Int
+  $query: String
+  $first: Int!
+  $tags: [String!]
+) {
+  questionTopicsList(
+    questionId: $questionId
+    orderBy: $orderBy
+    skip: $skip
+    query: $query
+    first: $first
+    tags: $tags
+  ) {
+    ...TopicsList
+  }
+}

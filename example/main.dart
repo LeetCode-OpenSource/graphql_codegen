@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:graphql_codegen/graphql_codegen.dart';
 
 import 'operation_visitor.dart';
@@ -5,9 +6,8 @@ import 'fetch_graphql_metadata.dart';
 import 'tap.dart';
 
 main() async {
-  final typeMeta = await fetchMetadata("https://dev.lingkou.xyz/graphql");
-  final visitor = OperationVisitor(typeMeta, tap: tap);
-  final result = gen('''
+  final typeMeta = await fetchMetadata("https://dev.lingkou.work/graphql?");
+  final globalResult = gen('''
 query globalData {
   feature {
     questionTranslation
@@ -68,6 +68,24 @@ query globalData {
   websocketUrl
 }
 
-  ''', visitor);
-  print(result);
+  ''', OperationVisitor(typeMeta, tap: tap));
+  final globalFile = File.fromUri(Uri.file('./global.dart'));
+  await globalFile.writeAsString(globalResult);
+  final questionResult = gen('''
+  query questionNode(\$titleSlug: String) {
+    question(titleSlug: \$titleSlug) {
+      questionId
+      questionTitle
+      translatedTitle
+      translatedContent
+      content
+      difficulty
+      stats
+      status
+    }
+  }
+
+  ''', OperationVisitor(typeMeta, tap: tap));
+  final questionFile = File.fromUri(Uri.file('./question.dart'));
+  await questionFile.writeAsString(questionResult);
 }

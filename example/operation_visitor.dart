@@ -8,7 +8,7 @@ import 'tap.dart';
 import 'scalar_type_mapping.dart';
 
 class FieldMeta {
-  FieldMeta(this.fieldName, this.name, this.isList, this.isMaybe);
+  FieldMeta(this.fieldName, this.name, this.isList, this.isMaybe, this.isEnum);
 
   final String name;
 
@@ -17,6 +17,8 @@ class FieldMeta {
   final bool isList;
   
   final bool isMaybe;
+
+  final bool isEnum;
 }
 
 class OperationVisitor extends SimpleVisitor {
@@ -55,14 +57,14 @@ class OperationVisitor extends SimpleVisitor {
     final fieldDeclarion = defination.variableDefinition.map((variable) {
       final typeName = variable.type.source();
       final String gqlTypeName = typeMap[typeName]['name'];
-      final String dartType = typeMap[typeName]['kind'] == 'SCALAR'
+      final String dartType = typeMap[typeName]['kind'] == 'SCALAR' 
           ? ScalarTypeMapping[gqlTypeName]
-          : gqlTypeName;
+          : typeMap[typeName]['kind'] == 'ENUM' ? 'String' : gqlTypeName;
       return '$dartType ${variable.variable.name};';
     }).join('\n');
     return '''
-    class ${defination.name}Variable {
-      ${defination.name}Variable({$constructorParams});
+    class ${capitalizeUpperCase(defination.name)}Variable {
+      ${capitalizeUpperCase(defination.name)}Variable({$constructorParams});
 
       $fieldDeclarion
     }
@@ -73,7 +75,11 @@ class OperationVisitor extends SimpleVisitor {
     dynamic result = def['type'];
     var isList = false;
     var isMaybe = true;
+    var isEnum = false;
     while (true) {
+      if (result['kind'] == 'ENUM') {
+        isEnum = true;
+      }
       if (result['kind'] == 'NON_NULL') {
         isMaybe = true;
       }
@@ -86,7 +92,7 @@ class OperationVisitor extends SimpleVisitor {
         break;
       }
     }
-    return FieldMeta(def['name'], result['name'], isList, isMaybe);
+    return FieldMeta(def['name'], result['name'], isList, isMaybe, isEnum);
   }
 
   static Map<String, Map<String, dynamic>> _makeSubType(
@@ -117,11 +123,9 @@ class OperationVisitor extends SimpleVisitor {
 
     return '''
     class $className {
-      ${selectionResults.map((visitor) => visitor.schemaDef).join("\n")}
+      ${selectionResults.map((visitor) => visitor.schemaDef).where((def) => def.isNotEmpty).join("\n")}
     }
-    
     ${selectionResults.map((visitor) => visitor.getResult()).join("\n")}
-        
     ''';
   }
 

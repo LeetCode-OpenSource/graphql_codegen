@@ -43,12 +43,12 @@ class FieldVisitor extends SimpleVisitor {
       _result += childFiledsResults;
     } else {
       final fieldMeta = OperationVisitor.findDeepOfType(subTypeMap[field.name]);
+      final typeName = fieldMeta.isEnum ? 'String' : ScalarTypeMapping[fieldMeta.name];
       if (fieldMeta.isList) {
-        _result += 'List<${ScalarTypeMapping[fieldMeta.name]}> ${field.name};\n';
+        _schemaDef = 'List<$typeName> ${field.name};\n';
       } else {
-        _result += '${ScalarTypeMapping[fieldMeta.name]} ${field.name};\n';
+        _schemaDef = '$typeName ${field.name};\n';
       }
-      _schemaDef = '';
     }
     return super.visitField(field);
   }

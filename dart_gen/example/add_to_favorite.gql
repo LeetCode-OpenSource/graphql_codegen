@@ -1,0 +1,14 @@
+mutation addQuestionToNewFavorite($name: String!, $isPublicFavorite: Boolean!, $questionId: String!) {
+    addQuestionToNewFavorite(
+    name: $name
+    isPublicFavorite: $isPublicFavorite
+    questionId: $questionId
+  ) {
+    ok
+    error
+    name
+    isPublicFavorite
+    favoriteIdHash
+    questionId
+  }
+}

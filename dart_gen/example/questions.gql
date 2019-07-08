@@ -1,0 +1,12 @@
+query questionNode($titleSlug: String) {
+  question(titleSlug: $titleSlug) {
+    questionId
+    questionTitle
+    translatedTitle
+    translatedContent
+    content
+    difficulty
+    stats
+    status
+  }
+}

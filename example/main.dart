@@ -88,4 +88,25 @@ query globalData {
   ''', OperationVisitor(typeMeta, tap: tap));
   final questionFile = File.fromUri(Uri.file('./question.dart'));
   await questionFile.writeAsString(questionResult);
+
+  final addQuestionToFavoriteResult = gen('''
+    mutation addQuestionToNewFavorite(\$name: String!, \$isPublicFavorite: Boolean!, \$questionId: String!) {
+      addQuestionToNewFavorite(
+        name: \$name
+        isPublicFavorite: \$isPublicFavorite
+        questionId: \$questionId
+      ) {
+        ok
+        error
+        name
+        isPublicFavorite
+        favoriteIdHash
+        questionId
+      }
+    }
+
+  ''', OperationVisitor(typeMeta, tap: tap));
+
+  final addQuestionToFavoriteFile = File.fromUri(Uri.file('./favorite.dart'));
+  await addQuestionToFavoriteFile.writeAsString(addQuestionToFavoriteResult);
 }

@@ -22,6 +22,11 @@ class InlineFragmentElement extends SelectionElement {
   @override
   final kind = ElementKind.InlineFragment;
 
+  @override
+  String get name {
+    return null;
+  }
+
   NamedTypeElement _typeCondition;
 
   NamedTypeElement get typeCondition {

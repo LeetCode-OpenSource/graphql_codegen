@@ -45,7 +45,11 @@ class FieldElement extends SelectionElement {
     return _selectionSet;
   }
 
+  @override
   String get name {
+    if (_field.fieldName.alias != null) {
+      return _field.fieldName.alias.name;
+    }
     return _field.fieldName.name;
   }
 

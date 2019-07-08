@@ -10,6 +10,8 @@ abstract class SelectionElement extends Element {
 
   final SelectionContext _selection;
 
+  String get name;
+
   bool isField() {
     return _selection.field != null;
   }

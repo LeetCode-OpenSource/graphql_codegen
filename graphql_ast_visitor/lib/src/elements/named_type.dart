@@ -12,6 +12,10 @@ class NamedTypeElement extends Element {
   @override
   final kind = ElementKind.NamedType;
 
+  String get name {
+    return _named.name;
+  }
+
   @override
   String source() {
     return _named.name;

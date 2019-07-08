@@ -1,7 +1,7 @@
 import 'package:graphql_ast_visitor/graphql_ast_visitor.dart';
 
 import 'field_meta.dart';
-import 'field_visitor.dart';
+import 'selection_visitor.dart';
 import 'tap.dart';
 
 FieldMeta findDeepOfType(dynamic def) {
@@ -10,6 +10,7 @@ FieldMeta findDeepOfType(dynamic def) {
   var isMaybe = true;
   var isEnum = false;
   var isUnion = false;
+  var isScalar = false;
   while (true) {
     if (result['kind'] == 'ENUM') {
       isEnum = true;
@@ -23,6 +24,9 @@ FieldMeta findDeepOfType(dynamic def) {
     if (result['kind'] == 'LIST') {
       isList = true;
     }
+    if (result['kind'] == 'SCALAR') {
+      isScalar = true;
+    }
     if (result['ofType'] != null) {
       result = result['ofType'];
     } else {
@@ -30,7 +34,7 @@ FieldMeta findDeepOfType(dynamic def) {
     }
   }
   return FieldMeta(
-      def['name'], result['name'], isList, isMaybe, isEnum, isUnion);
+      def['name'], result['name'], isList, isMaybe, isEnum, isUnion, isScalar);
 }
 
 String generateFromSelection(
@@ -38,18 +42,31 @@ String generateFromSelection(
     String operationName,
     String parentName,
     List<SelectionElement> selections,
-    Map<String, dynamic> typeMap) {
+    Map<String, dynamic> typeMap,
+    Map<String, FragmentDefinationElement> fragments,
+    {skipClassGeneration = false}) {
+  final flatSelections = flatFragmentSpreadSelections(selections, fragments);
   final subTypeMap = _makeSubType(parentName, typeMap);
-  final selectionResults = selections.map((selection) {
+  final List<SelectionVisitor> selectionVisitors = [];
+  final selectionResults = flatSelections.fold(selectionVisitors,
+      (List<SelectionVisitor> acc, selection) {
+    final subTypeName = selection is InlineFragmentElement
+        ? selection.typeCondition.name
+        : selection.name;
+    final graphqlTypeMeta = findDeepOfType(subTypeMap[subTypeName]);
+    final selectionVisitor = SelectionVisitor(
+        typeMap, subTypeMap, className, graphqlTypeMeta, fragments,
+        tap: tap);
     if (selection is FieldElement) {
-      final graphqlTypeMeta = findDeepOfType(subTypeMap[selection.name]);
-      final fieldVisitor = FieldVisitor(
-          typeMap, subTypeMap, operationName, graphqlTypeMeta,
-          tap: tap);
-      fieldVisitor.visitField(selection);
-      return fieldVisitor;
-    } else if (selection is InlineFragmentElement) {}
-  }).where((visitor) => visitor != null);
+      selectionVisitor.visitField(selection);
+      acc.add(selectionVisitor);
+    } else if (selection is InlineFragmentElement) {
+      selectionVisitor.unionClassName = className;
+      selectionVisitor.visitInlineFragment(selection);
+      acc.add(selectionVisitor);
+    }
+    return acc;
+  });
   final String fieldsInitialization =
       selectionResults.map((visitor) => 'this.${visitor.fieldName}').join(', ');
   final String toJsonImpl = selectionResults.map((visitor) {
@@ -69,10 +86,12 @@ String generateFromSelection(
   ''';
   final String fromJsonImpl = selectionResults.map((visitor) {
     final jsonContent = visitor.graphqlTypeMeta.isList
-        ? 'List<${visitor.graphqlTypeMeta.name}>.from(json[\'${visitor.fieldName}\'].map((field) => ${visitor.graphqlTypeMeta.isEnum ? '${visitor.graphqlTypeMeta.name}Values.map[field]' : '${visitor.graphqlTypeMeta.name}.fromJson(field)'}))'
+        ? 'List<${visitor.graphqlTypeMeta.isEnum ? visitor.graphqlTypeMeta.name : visitor.typeName}>.from(json[\'${visitor.fieldName}\'].map((field) => ${visitor.graphqlTypeMeta.isEnum ? '${visitor.graphqlTypeMeta.name}Values.map[field]' : visitor.graphqlTypeMeta.isScalar ? 'field' : '${visitor.typeName}.fromJson(field)'}))'
         : visitor.graphqlTypeMeta.isEnum
-            ? '${visitor.graphqlTypeMeta.name}Values.map[${visitor.fieldName}]'
-            : 'json[\'${visitor.fieldName}\']';
+            ? '${visitor.graphqlTypeMeta.name}Values.map[json[\'${visitor.fieldName}\']]'
+            : visitor.graphqlTypeMeta.isScalar
+                ? 'json[\'${visitor.fieldName}\']'
+                : '${visitor.schemaName}.fromJson(json[\'${visitor.fieldName}\'])';
     return '${visitor.fieldName}: $jsonContent';
   }).join(',\n');
   final String fromJsonFactory = '''
@@ -80,7 +99,9 @@ String generateFromSelection(
       $fromJsonImpl
     );
   ''';
-  return '''
+  final classDefination = skipClassGeneration
+      ? ''
+      : '''
     class $className {
       $className({$fieldsInitialization});
 
@@ -90,6 +111,9 @@ String generateFromSelection(
 
       $toJson
     }
+  ''';
+  return '''
+    $classDefination
     ${selectionResults.map((visitor) => visitor.getResult()).join("\n")}
   ''';
 }
@@ -97,10 +121,20 @@ String generateFromSelection(
 Map<String, Map<String, dynamic>> _makeSubType(
     String parentType, Map<String, dynamic> typeMap) {
   final Map<String, Map<String, dynamic>> subTypeMap = {};
-  final List<dynamic> fields =
-      typeMap[parentType]['fields'] ?? typeMap[parentType]['possibleTypes'];
+  List<dynamic> fields;
+  var isUnion = false;
+  if (typeMap[parentType]['possibleTypes'] != null) {
+    fields = typeMap[parentType]['possibleTypes'];
+    isUnion = true;
+  } else {
+    fields = typeMap[parentType]['fields'];
+  }
   for (var def in fields) {
-    subTypeMap[def['name']] = def;
+    if (isUnion) {
+      subTypeMap[def['name']] = {'type': def, 'name': def['name']};
+    } else {
+      subTypeMap[def['name']] = def;
+    }
   }
   return subTypeMap;
 }
@@ -115,4 +149,57 @@ String getDefaultValue(ValueElement value) {
     default:
       throw GenerateError('Unimplement default value for ${value.valueKind}');
   }
+}
+
+List<SelectionElement> flatFragmentSpreadSelections(
+    List<SelectionElement> selections,
+    Map<String, FragmentDefinationElement> fragments) {
+  final List<SelectionElement> result = [];
+  return selections.fold(result, (acc, cur) {
+    if (cur is FragmentSpreadElement) {
+      if (!fragments.containsKey(cur.name)) {
+        throw GenerateError('Missing fragment defination: ${cur.name}');
+      }
+      final fragmentDefinition = fragments[cur.name];
+      if (fragmentDefinition.selectionSet.selections.isNotEmpty) {
+        result.addAll(flatFragmentSpreadSelections(
+            fragmentDefinition.selectionSet.selections, fragments));
+      }
+    } else {
+      acc.add(cur);
+    }
+    return acc;
+  });
+}
+
+String generateUnions(Map<String, dynamic> typemeta, String unionTypeName,
+    String unionTypeNameWithPrefix, Set<String> maybeUnions) {
+  final List<dynamic> possibleTypes = typemeta['possibleTypes'];
+  final String castMethods = possibleTypes
+      .where((type) => maybeUnions.contains(type['name']))
+      .map((type) {
+    final String typeName = type['name'];
+    final subTypeClassName = '${typeName}Of$unionTypeNameWithPrefix';
+    return '''
+      $subTypeClassName castTo$subTypeClassName() {
+        if (_value['__typename'] != '$typeName') {
+          return null;
+        }
+        return $subTypeClassName.fromJson(_value);
+      }
+    ''';
+  }).join('\n');
+  return '''
+    class $unionTypeNameWithPrefix {
+      const $unionTypeNameWithPrefix(this._value);
+
+      factory $unionTypeNameWithPrefix.fromJson(dynamic json) => $unionTypeNameWithPrefix(json);
+
+      final Map<String, dynamic> _value;
+
+      dynamic toJson() => _value;
+
+      $castMethods
+    }
+  ''';
 }

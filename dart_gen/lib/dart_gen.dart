@@ -21,7 +21,11 @@ Future<void> generateSchemas(
         'Fetch metadata from grapqhlEndpoint: $graphqlEndpoint fail, Error: $e');
     exit(1);
   }
-  final result = gen(graphlFiles, DocumentVisitor(typeMeta));
+  final fragmentsVisitor =
+      DocumentVisitor(typeMeta, shouldCollectFragment: true, fragments: {});
+  gen(graphlFiles, fragmentsVisitor);
+  final result = gen(graphlFiles,
+      DocumentVisitor(typeMeta, fragments: fragmentsVisitor.fragments));
   final file = File.fromUri(Uri.file(targetPath));
   await file.writeAsString(result);
 }

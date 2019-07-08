@@ -26,6 +26,7 @@ class FragmentSpreadElement extends SelectionElement {
     return _directives;
   }
 
+  @override
   String get name {
     return _fragmentSpread.name;
   }

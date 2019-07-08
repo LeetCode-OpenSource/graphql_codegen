@@ -6,45 +6,20 @@ import 'scalar_type_mapping.dart';
 import 'utils.dart';
 
 class OperationVisitor extends SimpleVisitor {
-  OperationVisitor(final this.typeMap, {Tap tap}) : super(tap: tap);
+  OperationVisitor(final this.typeMap, this.fragments, {Tap tap})
+      : super(tap: tap);
+
+  static final Set<String> operationNames = {};
 
   final Map<String, dynamic> typeMap;
 
-  final Set<String> operationNames = {};
+  final Map<String, FragmentDefinationElement> fragments;
 
   String _result = '';
 
   @override
   String getResult() {
     return _result;
-  }
-
-  void _generateUnions() {
-    typeMap.forEach((typename, typemeta) {
-      if (typemeta['kind'] == 'UNION') {
-        final List<dynamic> possibleTypes = typemeta['possibleTypes'];
-        final String castMethods = possibleTypes.map((type) {
-          final String typeName = type['name'];
-          return '''
-            $typeName castTo$typeName() {
-              if (this._value['__typename'] != '$typeName') {
-                return null;
-              }
-              return $typeName.fromJson(_value);
-            }
-          ''';
-        }).join('\n');
-        _result += '''
-        class ${capitalizeUpperCase(typename)} {
-          const ${capitalizeUpperCase(typename)}(this._value);
-
-          final Map<String, dynamic> _value;
-
-          $castMethods
-        }
-        ''';
-      }
-    });
   }
 
   String _generateOperationVariable(OperationDefinitionElement defination) {
@@ -95,7 +70,8 @@ class OperationVisitor extends SimpleVisitor {
         capitalizeOperationName,
         capitalizeOperation,
         defination.selectionSet.selections,
-        typeMap);
+        typeMap,
+        fragments);
     _result += fieldResults;
     return [defination];
   }

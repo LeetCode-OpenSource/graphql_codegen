@@ -1,14 +1,19 @@
 import 'package:graphql_ast_visitor/graphql_ast_visitor.dart';
 
 import 'capitalize_upper_case.dart';
-import 'fragment_definition_visitor.dart';
 import 'operation_visitor.dart';
 import 'tap.dart';
 
 class DocumentVisitor extends SimpleVisitor {
-  DocumentVisitor(final this.typeMap) : super(tap: tap) {
+  DocumentVisitor(final this.typeMap,
+      {this.shouldCollectFragment = false, this.fragments = const {}})
+      : super(tap: tap) {
     _generateEnums();
   }
+
+  final Map<String, FragmentDefinationElement> fragments;
+
+  final bool shouldCollectFragment;
 
   String _result = '';
 
@@ -68,18 +73,19 @@ class DocumentVisitor extends SimpleVisitor {
   @override
   List<FragmentDefinationElement> visitFragmentDefinition(
       FragmentDefinationElement defination) {
-    final _fragmentDefinitionVisitor =
-        FragmentDefinitionVisitor(typeMap, tap: tap);
-    final result =
-        _fragmentDefinitionVisitor.visitFragmentDefinition(defination);
-    _result += _fragmentDefinitionVisitor.getResult();
-    return result;
+    if (shouldCollectFragment) {
+      fragments[defination.name] = defination;
+    }
+    return [defination];
   }
 
   @override
   List<OperationDefinitionElement> visitOperationDefinition(
       OperationDefinitionElement defination) {
-    final _operationVisitor = OperationVisitor(typeMap, tap: tap);
+    if (shouldCollectFragment) {
+      return [defination];
+    }
+    final _operationVisitor = OperationVisitor(typeMap, fragments, tap: tap);
     final result = _operationVisitor.visitOperationDefinition(defination);
     _result += _operationVisitor.getResult();
     return result;

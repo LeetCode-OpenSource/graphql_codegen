@@ -1,6 +1,6 @@
 class FieldMeta {
   const FieldMeta(this.fieldName, this.name, this.isList, this.isMaybe,
-      this.isEnum, this.isUnion);
+      this.isEnum, this.isUnion, this.isScalar);
 
   final String name;
 
@@ -13,4 +13,6 @@ class FieldMeta {
   final bool isEnum;
 
   final bool isUnion;
+
+  final bool isScalar;
 }

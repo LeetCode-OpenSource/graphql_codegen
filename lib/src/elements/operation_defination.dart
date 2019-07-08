@@ -9,13 +9,15 @@ import 'visitor.dart';
 
 class OperationDefinitionElement extends DefinitionElement {
   OperationDefinitionElement(this._defination) : super(_defination) {
-    _variableDefinition = this
-        ._defination
-        .variableDefinitions
-        .variableDefinitions
-        .map((variableDefination) =>
-            VariableDefinitionElement(variableDefination, this))
-        .toList();
+    if (this._defination.variableDefinitions != null) {
+      _variableDefinition = this
+          ._defination
+          .variableDefinitions
+          .variableDefinitions
+          .map((variableDefination) =>
+              VariableDefinitionElement(variableDefination, this))
+          .toList();
+    }
 
     _directives = this
         ._defination

@@ -1,74 +1,73 @@
 import 'package:graphql_codegen/graphql_codegen.dart';
 
-import 'introspection.dart';
+import 'operation_visitor.dart';
+import 'fetch_graphql_metadata.dart';
+import 'tap.dart';
 
-class DartGenerateVisitor extends SimpleVisitor {
-  DartGenerateVisitor({Tap tap}) : super(tap: tap);
-
-  String _result = '';
-
-  @override
-  String getResult() {
-    return _result;
-  }
-
-  String getDefaultValue(ValueElement value) {
-    if (value.valueKind == ValueKind.String) {
-      return '"${value.source()}"';
-    } else if (value.valueKind == ValueKind.Boolean) {
-      return '${value.source()}';
-    }
-  }
-
-  @override
-  List<OperationDefinitionElement> visitOperationDefinition(
-      OperationDefinitionElement defination) {
-    final constructorParams = defination.variableDefinition.map((variable) {
-      if (variable.defaultValue != null) {
-        return 'this.${variable.variable.name} = ${getDefaultValue(variable.defaultValue)}';
-      } else {
-        return 'this.${variable.variable.name}';
-      }
-    }).join(', ');
-    _result += '''
-    class ${defination.name}Variable {
-      ${defination.name}Variable({$constructorParams});
-    }
-    ''';
-    return super.visitOperationDefinition(defination);
-  }
-}
-
-void tap(SimpleVisitor visitor, Element ele) {
-  print(ele.kind);
-  ele.accept(visitor);
-}
-
-main() {
-  final visitor = DartGenerateVisitor(tap: tap);
+main() async {
+  final typeMeta = await fetchMetadata("https://dev.lingkou.xyz/graphql");
+  final visitor = OperationVisitor(typeMeta, tap: tap);
   final result = gen('''
-query GetUser(\$userId: ID!, \$withFriends: Boolean = false) {
-  user(id: \$userId) {
-    id,
-    name,
-    isViewerFriend,
-    profilePicture(size: 50)  {
-      ...PictureFragment
-    }
-  	friends @include(if: \$withFriends) {
-      name
-    }
-    friend @include(if: 1) {
-      name
-    }
+query globalData {
+  feature {
+    questionTranslation
+    subscription
+    signUp
+    discuss
+    mockInterview
+    contest
+    store
+    book
+    chinaProblemDiscuss
+    socialProviders
+    studentFooter
+    cnJobs
   }
+  userStatus {
+    isSignedIn
+    isAdmin
+    isStaff
+    isSuperuser
+    isTranslator
+    isPremium
+    isVerified
+    isWechatVerified
+    checkedInToday
+    username
+    realName
+    userSlug
+    groups
+    jobsCompany {
+      nameSlug
+      logo
+      description
+      name
+      legalName
+      isVerified
+      permissions {
+        canInviteUsers
+        canInviteAllSite
+        leftInviteTimes
+        maxVisibleExploredUser
+      }
+    }
+    avatar
+    optedIn
+    requestRegion
+    region
+    activeSessionId
+    permissions
+    notificationStatus {
+      lastModified
+      numUnread
+    }
+    completedFeatureGuides
+  }
+  siteRegion
+  chinaHost
+  websocketUrl
 }
 
-fragment PictureFragment on Picture {
-  uri,
-  width,
-  height
-}
   ''', visitor);
   print(result);
 }

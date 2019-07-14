@@ -1,0 +1,14 @@
+dart:
+  - 2.4.0
+
+stages:
+  - analyzer_and_format:
+    - group:
+      - dartfmt
+      - dartanalyzer: --fatal-infos --fatal-warnings .
+    - group:
+      - dartanalyzer: --fatal-warnings .
+
+cache:
+  directories:
+  - .dart_tool/build

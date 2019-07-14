@@ -1,0 +1,16 @@
+enum ElementKind {
+  Argument,
+  Document,
+  OperationDefinition,
+  FragmentDefinition,
+  NamedType,
+  NonNullType,
+  Directive,
+  SelectionSet,
+  Field,
+  Value,
+  Variable,
+  VariableDefinition,
+  FragmentSpread,
+  InlineFragment,
+}

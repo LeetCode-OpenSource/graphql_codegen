@@ -1,0 +1,11 @@
+name: star_wars
+publish_to: none
+dependencies:
+  angel_graphql: any
+  angel_hot: any
+  angel_serialize: any
+  io: any
+dev_dependencies:
+  angel_serialize_generator: any
+  build_runner: any
+  graphql_generator: any

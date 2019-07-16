@@ -91,3 +91,6 @@ You can also write some more gql files from [gitlab](https://gitlab.com/-/graphq
 - [x] Fragments
 - [x] Union Types
 - [ ] Directives
+
+## Limitions
+- Every `Query` and `Mutation` must have a *unique* name

@@ -5,12 +5,13 @@ import 'package:path/path.dart';
 
 import 'introspection.dart';
 
-Future<Map<String, dynamic>> fetchMetadata(String endpoint,
-    {bool cache = false}) async {
-  Map<String, dynamic> json;
-  final tmpFilePath =
+final tmpFilePath =
       Uri.parse(join(Directory.systemTemp.path, 'gqlmeta.json'));
-  final tmpfs = File.fromUri(tmpFilePath);
+final tmpfs = File.fromUri(tmpFilePath);
+
+Future<Map<String, dynamic>> fetchMetadata(String endpoint,
+    {bool cache = false, Map<String, String> headers}) async {
+  Map<String, dynamic> json;
   if (cache) {
     final existed = tmpfs.existsSync();
     if (existed) {
@@ -25,6 +26,7 @@ Future<Map<String, dynamic>> fetchMetadata(String endpoint,
         }),
         headers: {
           'content-type': 'application/json',
+          ...headers,
         });
     if (cache) {
       await tmpfs.writeAsString(response.body);
@@ -41,5 +43,11 @@ Future<Map<String, dynamic>> fetchMetadata(String endpoint,
   } catch (e) {
     print(json);
     rethrow;
+  }
+}
+
+Future<void> deleteCache() async {
+  if (tmpfs.existsSync()) {
+    await tmpfs.delete();
   }
 }

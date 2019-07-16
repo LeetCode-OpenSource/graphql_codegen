@@ -8,6 +8,7 @@ import 'src/document_visitor.dart';
 import 'src/fetch_graphql_metadata.dart';
 
 export 'src/document_visitor.dart';
+export 'src/fetch_graphql_metadata.dart' show deleteCache;
 export 'src/operation_visitor.dart';
 
 Future<void> generateSchemas(
@@ -16,7 +17,8 @@ Future<void> generateSchemas(
             Map<String, FragmentDefinationElement> fragments)
         documentVisitorFactory,
     bool cache = true,
-    bool formatted = true}) async {
+    bool formatted = true,
+    Map<String, String> headers}) async {
   final glob = Glob(filesPattern);
   final String graphlFiles = await glob
       .list()
@@ -24,7 +26,7 @@ Future<void> generateSchemas(
       .fold('', (acc, cur) => acc + '\n' + cur);
   Map<String, dynamic> typeMeta;
   try {
-    typeMeta = await fetchMetadata(graphqlEndpoint, cache: cache);
+    typeMeta = await fetchMetadata(graphqlEndpoint, cache: cache, headers: headers);
   } catch (e) {
     print(
         'Fetch metadata from grapqhlEndpoint: $graphqlEndpoint fail, Error: $e');

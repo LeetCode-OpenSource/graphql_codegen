@@ -1,0 +1,25 @@
+query projectDetail($fullPath: ID!, $first: Int!, $after: String!, $status: PipelineStatusEnum) {
+  project(fullPath: $fullPath) {
+    archived
+    pipelines(first: $first, after: $after, status: $status) {
+      edges {
+        cursor
+        node {
+          id
+          iid
+          sha
+          status
+          detailedStatus {
+            detailsPath
+            hasDetails
+          }
+        }
+      }
+      pageInfo {
+        endCursor
+        hasNextPage
+        hasPreviousPage
+      }
+    }
+  }
+}

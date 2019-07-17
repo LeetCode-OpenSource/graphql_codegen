@@ -10,12 +10,10 @@ class SelectionVisitor extends SimpleVisitor {
       this.graphqlTypeMeta, this.fragments,
       {Tap tap})
       : super(tap: tap) {
+    schemaName = operationName;
     if (graphqlTypeMeta.isList) {
-      schemaName = '$operationName${graphqlTypeMeta.name}';
       typeName = schemaName;
     } else {
-      schemaName =
-          '$operationName${capitalizeUpperCase(graphqlTypeMeta.fieldName)}';
       typeName = graphqlTypeMeta.name;
     }
   }

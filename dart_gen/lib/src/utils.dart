@@ -1,5 +1,6 @@
 import 'package:graphql_ast_visitor/graphql_ast_visitor.dart';
 
+import 'capitalize_upper_case.dart';
 import 'field_meta.dart';
 import 'scalar_type_mapping.dart';
 import 'selection_visitor.dart';
@@ -57,7 +58,11 @@ String generateFromSelection(
         : selection.name;
     final graphqlTypeMeta = findDeepOfType(subTypeMap[subTypeName]);
     final selectionVisitor = SelectionVisitor(
-        typeMap, subTypeMap, className, graphqlTypeMeta, fragments,
+        typeMap,
+        subTypeMap,
+        '$className${capitalizeUpperCase(subTypeName)}',
+        graphqlTypeMeta,
+        fragments,
         tap: tap);
     if (selection is FieldElement) {
       selectionVisitor.visitField(selection);

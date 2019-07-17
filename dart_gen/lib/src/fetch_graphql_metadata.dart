@@ -9,7 +9,7 @@ final tmpFilePath = Uri.parse(join(Directory.systemTemp.path, 'gqlmeta.json'));
 final tmpfs = File.fromUri(tmpFilePath);
 
 Future<Map<String, dynamic>> fetchMetadata(String endpoint,
-    {bool cache = false, Map<String, String> headers = const {}}) async {
+    {bool cache = false, Map<String, String> headers}) async {
   Map<String, dynamic> json;
   if (cache) {
     final existed = tmpfs.existsSync();
@@ -25,7 +25,7 @@ Future<Map<String, dynamic>> fetchMetadata(String endpoint,
         }),
         headers: {
           'content-type': 'application/json',
-          ...headers,
+          ...headers ?? {},
         });
     if (cache) {
       await tmpfs.writeAsString(response.body);

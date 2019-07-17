@@ -5,12 +5,11 @@ import 'package:path/path.dart';
 
 import 'introspection.dart';
 
-final tmpFilePath =
-      Uri.parse(join(Directory.systemTemp.path, 'gqlmeta.json'));
+final tmpFilePath = Uri.parse(join(Directory.systemTemp.path, 'gqlmeta.json'));
 final tmpfs = File.fromUri(tmpFilePath);
 
 Future<Map<String, dynamic>> fetchMetadata(String endpoint,
-    {bool cache = false, Map<String, String> headers}) async {
+    {bool cache = false, Map<String, String> headers = const {}}) async {
   Map<String, dynamic> json;
   if (cache) {
     final existed = tmpfs.existsSync();

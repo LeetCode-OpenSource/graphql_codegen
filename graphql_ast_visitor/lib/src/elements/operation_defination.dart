@@ -86,11 +86,11 @@ class OperationDefinitionElement extends DefinitionElement {
 
   @override
   void accept(ElementVisitor visitor) {
-    _variableDefinition = _variableDefinition
+    _variableDefinition = (_variableDefinition ?? [])
         .map((val) => visitor.visitVariableDefinition(val))
         .fold([], flat);
 
-    _directives = _directives
+    _directives = (_directives ?? [])
         .map((directive) => visitor.visitDirective(directive))
         .fold([], flat);
 

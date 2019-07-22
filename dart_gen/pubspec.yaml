@@ -1,6 +1,6 @@
 name: dart_gen
 description: Generate dart codes from graphql ast.
-version: 0.1.22
+version: 0.1.23
 homepage: https://github.com/Brooooooklyn/graphql_codegen
 author: LongYinan <lynweklm@gmail.com>
 

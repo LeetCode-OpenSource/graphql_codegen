@@ -56,6 +56,9 @@ String generateFromSelection(
     final subTypeName = selection is InlineFragmentElement
         ? selection.typeCondition.name
         : selection.name;
+    if (subTypeName.startsWith('__')) {
+      return acc;
+    }
     final graphqlTypeMeta = findDeepOfType(subTypeMap[subTypeName]);
     final selectionVisitor = SelectionVisitor(
         typeMap,

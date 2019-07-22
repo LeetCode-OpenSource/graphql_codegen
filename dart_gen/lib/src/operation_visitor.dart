@@ -23,7 +23,8 @@ class OperationVisitor extends SimpleVisitor {
   }
 
   String _generateOperationVariable(OperationDefinitionElement defination) {
-    if (defination.variableDefinition == null) {
+    if (defination.variableDefinition == null ||
+        defination.variableDefinition.isEmpty) {
       return '';
     }
     final constructorParams = defination.variableDefinition.map((variable) {

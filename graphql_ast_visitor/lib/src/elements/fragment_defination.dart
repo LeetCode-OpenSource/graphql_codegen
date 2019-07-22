@@ -51,7 +51,7 @@ class FragmentDefinationElement extends DefinitionElement {
 
   @override
   String source() {
-    return null;
+    return _defination.span.text;
   }
 
   @override

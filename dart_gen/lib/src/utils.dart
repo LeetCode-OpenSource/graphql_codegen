@@ -97,13 +97,13 @@ String generateFromSelection(
   final String fromJsonImpl = selectionResults.map((visitor) {
     final jsonContent = visitor.graphqlTypeMeta.isList
         ? visitor.graphqlTypeMeta.isScalar
-            ? 'List<${scalarTypeMapping[visitor.graphqlTypeMeta.name]}>.from(json[\'${visitor.fieldName}\'])'
-            : 'List<${visitor.graphqlTypeMeta.isEnum ? visitor.graphqlTypeMeta.name : visitor.typeName}>.from((json[\'${visitor.fieldName}\'] ?? []).map((field) => ${visitor.graphqlTypeMeta.isEnum ? '${visitor.graphqlTypeMeta.name}Values.map[field]' : visitor.graphqlTypeMeta.isScalar ? 'field' : '${visitor.typeName}.fromJson(field)'}))'
+            ? 'List<${scalarTypeMapping[visitor.graphqlTypeMeta.name]}>.from(json[\'${visitor.alias ?? visitor.fieldName}\'])'
+            : 'List<${visitor.graphqlTypeMeta.isEnum ? visitor.graphqlTypeMeta.name : visitor.typeName}>.from((json[\'${visitor.alias ?? visitor.fieldName}\'] ?? []).map((field) => ${visitor.graphqlTypeMeta.isEnum ? '${visitor.graphqlTypeMeta.name}Values.map[field]' : visitor.graphqlTypeMeta.isScalar ? 'field' : '${visitor.typeName}.fromJson(field)'}))'
         : visitor.graphqlTypeMeta.isEnum
-            ? 'json[\'${visitor.fieldName}\'] != null ? ${visitor.graphqlTypeMeta.name}Values.map[json[\'${visitor.fieldName}\']] : null'
+            ? 'json[\'${visitor.alias ?? visitor.fieldName}\'] != null ? ${visitor.graphqlTypeMeta.name}Values.map[json[\'${visitor.alias ?? visitor.fieldName}\']] : null'
             : visitor.graphqlTypeMeta.isScalar
-                ? 'json[\'${visitor.fieldName}\']'
-                : '${visitor.schemaName}.fromJson(json[\'${visitor.fieldName}\'])';
+                ? 'json[\'${visitor.alias ?? visitor.fieldName}\']'
+                : '${visitor.schemaName}.fromJson(json[\'${visitor.alias ?? visitor.fieldName}\'])';
     return '${visitor.fieldName}: $jsonContent';
   }).join(',\n');
   final String fromJsonFactory = '''

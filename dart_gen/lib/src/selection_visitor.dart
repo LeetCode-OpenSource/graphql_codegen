@@ -34,6 +34,8 @@ class SelectionVisitor extends SimpleVisitor {
 
   String fieldName;
 
+  String alias;
+
   String typeName;
 
   String _result = '';
@@ -71,6 +73,7 @@ class SelectionVisitor extends SimpleVisitor {
   @override
   List<FieldElement> visitField(FieldElement field) {
     fieldName = field.name;
+    alias = field.alias;
     if (field.selectionSet != null) {
       if (graphqlTypeMeta.isUnion) {
         schemaName =

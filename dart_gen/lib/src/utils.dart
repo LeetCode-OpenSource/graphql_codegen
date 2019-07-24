@@ -82,10 +82,18 @@ String generateFromSelection(
   final String fieldsInitialization =
       selectionResults.map((visitor) => 'this.${visitor.fieldName}').join(', ');
   final String toJsonImpl = selectionResults.map((visitor) {
+    String mapImpl;
+    if (visitor.graphqlTypeMeta.isList) {
+      mapImpl = visitor.graphqlTypeMeta.isEnum
+          ? '${visitor.graphqlTypeMeta.name}Values.reverseMap[value]'
+          : 'value?.toJson()';
+      mapImpl = _generateComplexToJsonMapImpl(
+          visitor.graphqlTypeMeta.listCount - 1, mapImpl);
+    }
     final field = visitor.isScalar
         ? visitor.fieldName
         : visitor.graphqlTypeMeta.isList
-            ? 'List<dynamic>.from((${visitor.fieldName} ?? []).map((value) => ${visitor.graphqlTypeMeta.isEnum ? '${visitor.graphqlTypeMeta.name}Values.reverseMap[value]' : 'value?.toJson()'}))'
+            ? 'List<dynamic>.from((${visitor.fieldName} ?? [])$mapImpl)'
             : visitor.graphqlTypeMeta.isEnum
                 ? '${visitor.fieldName} != null ? ${visitor.graphqlTypeMeta.name}Values.reverseMap[${visitor.fieldName}] : null'
                 : '${visitor.fieldName}?.toJson()';
@@ -97,20 +105,31 @@ String generateFromSelection(
     };
   ''';
   final String fromJsonImpl = selectionResults.map((visitor) {
-    var listOpen = '';
-    var listClose = '';
-    if (visitor.graphqlTypeMeta.isList) {
-      listOpen +=
-          List.filled(visitor.graphqlTypeMeta.listCount, 'List<').join('');
-      listClose += List.filled(visitor.graphqlTypeMeta.listCount, '>').join('');
+    final typeMeta = visitor.graphqlTypeMeta;
+    String listType;
+    String finalType;
+    String complexListCastType;
+    if (typeMeta.isList) {
+      final complexListType =
+          typeMeta.isEnum ? typeMeta.name : visitor.typeName;
+      finalType = typeMeta.isScalar
+          ? scalarTypeMapping[typeMeta.name]
+          : complexListType;
+      final listCount = typeMeta.listCount;
+      listType = listCount == 1
+          ? finalType
+          : '${List.filled(listCount - 1, 'List<').join('')}$finalType${List.filled(listCount - 1, '>').join('')}';
+      complexListCastType = typeMeta.isEnum
+          ? '${typeMeta.name}Values.map[field]'
+          : typeMeta.isScalar
+              ? 'field as $finalType'
+              : '${visitor.typeName}.fromJson(field)';
     }
-    final jsonContent = visitor.graphqlTypeMeta.isList
-        ? visitor.graphqlTypeMeta.isScalar
-            ? '$listOpen${scalarTypeMapping[visitor.graphqlTypeMeta.name]}$listClose.from(json[\'${visitor.alias ?? visitor.fieldName}\'])'
-            : '$listOpen${visitor.graphqlTypeMeta.isEnum ? visitor.graphqlTypeMeta.name : visitor.typeName}$listClose.from((json[\'${visitor.alias ?? visitor.fieldName}\'] ?? []).map((field) => ${visitor.graphqlTypeMeta.isEnum ? '${visitor.graphqlTypeMeta.name}Values.map[field]' : visitor.graphqlTypeMeta.isScalar ? 'field' : '${visitor.typeName}.fromJson(field)'}))'
-        : visitor.graphqlTypeMeta.isEnum
-            ? 'json[\'${visitor.alias ?? visitor.fieldName}\'] != null ? ${visitor.graphqlTypeMeta.name}Values.map[json[\'${visitor.alias ?? visitor.fieldName}\']] : null'
-            : visitor.graphqlTypeMeta.isScalar
+    final jsonContent = typeMeta.isList
+        ? 'List<$listType>.from((json[\'${visitor.alias ?? visitor.fieldName}\'] ?? [])${_generateComplexFromJsonMapImpl(typeMeta.listCount - 1, finalType, complexListCastType)})'
+        : typeMeta.isEnum
+            ? 'json[\'${visitor.alias ?? visitor.fieldName}\'] != null ? ${typeMeta.name}Values.map[json[\'${visitor.alias ?? visitor.fieldName}\']] : null'
+            : typeMeta.isScalar
                 ? 'json[\'${visitor.alias ?? visitor.fieldName}\']'
                 : '${visitor.schemaName}.fromJson(json[\'${visitor.alias ?? visitor.fieldName}\'])';
     return '${visitor.fieldName}: $jsonContent';
@@ -228,4 +247,21 @@ String generateUnions(Map<String, dynamic> typemeta, String unionTypeName,
       $castMethods
     }
   ''';
+}
+
+String _generateComplexToJsonMapImpl(int listCount, String mapImpl) {
+  if (listCount == 0) {
+    return '.map((value) => $mapImpl)';
+  }
+  return '.map((value$listCount) => value$listCount?${_generateComplexToJsonMapImpl(listCount - 1, mapImpl)})';
+}
+
+String _generateComplexFromJsonMapImpl(
+    int listCount, String type, String impl) {
+  if (listCount == 0) {
+    return '.map((field) => $impl)';
+  }
+  final levelType =
+      '${List.filled(listCount - 1, 'List<').join('')}$type${List.filled(listCount - 1, '>').join('')}';
+  return '.map((field$listCount) => List<$levelType>.from(field$listCount${_generateComplexFromJsonMapImpl(listCount - 1, type, impl)}))';
 }

@@ -26,7 +26,8 @@ Future<void> generateSchemas(
       .fold('', (acc, cur) => acc + '\n' + cur);
   Map<String, dynamic> typeMeta;
   try {
-    typeMeta = await fetchMetadata(graphqlEndpoint, cache: cache, headers: headers);
+    typeMeta =
+        await fetchMetadata(graphqlEndpoint, cache: cache, headers: headers);
   } catch (e) {
     print(
         'Fetch metadata from grapqhlEndpoint: $graphqlEndpoint fail, Error: $e');

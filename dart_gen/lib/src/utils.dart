@@ -13,6 +13,7 @@ FieldMeta findDeepOfType(dynamic def) {
   var isEnum = false;
   var isUnion = false;
   var isScalar = false;
+  var listCount = 0;
   // ignore: literal_only_boolean_expressions
   while (true) {
     if (result['kind'] == 'ENUM') {
@@ -26,6 +27,7 @@ FieldMeta findDeepOfType(dynamic def) {
     }
     if (result['kind'] == 'LIST') {
       isList = true;
+      listCount++;
     }
     if (result['kind'] == 'SCALAR') {
       isScalar = true;
@@ -36,8 +38,8 @@ FieldMeta findDeepOfType(dynamic def) {
       break;
     }
   }
-  return FieldMeta(
-      def['name'], result['name'], isList, isMaybe, isEnum, isUnion, isScalar);
+  return FieldMeta(def['name'], result['name'], isList, listCount, isMaybe,
+      isEnum, isUnion, isScalar);
 }
 
 String generateFromSelection(
@@ -95,10 +97,17 @@ String generateFromSelection(
     };
   ''';
   final String fromJsonImpl = selectionResults.map((visitor) {
+    var listOpen = '';
+    var listClose = '';
+    if (visitor.graphqlTypeMeta.isList) {
+      listOpen +=
+          List.filled(visitor.graphqlTypeMeta.listCount, 'List<').join('');
+      listClose += List.filled(visitor.graphqlTypeMeta.listCount, '>').join('');
+    }
     final jsonContent = visitor.graphqlTypeMeta.isList
         ? visitor.graphqlTypeMeta.isScalar
-            ? 'List<${scalarTypeMapping[visitor.graphqlTypeMeta.name]}>.from(json[\'${visitor.alias ?? visitor.fieldName}\'])'
-            : 'List<${visitor.graphqlTypeMeta.isEnum ? visitor.graphqlTypeMeta.name : visitor.typeName}>.from((json[\'${visitor.alias ?? visitor.fieldName}\'] ?? []).map((field) => ${visitor.graphqlTypeMeta.isEnum ? '${visitor.graphqlTypeMeta.name}Values.map[field]' : visitor.graphqlTypeMeta.isScalar ? 'field' : '${visitor.typeName}.fromJson(field)'}))'
+            ? '$listOpen${scalarTypeMapping[visitor.graphqlTypeMeta.name]}$listClose.from(json[\'${visitor.alias ?? visitor.fieldName}\'])'
+            : '$listOpen${visitor.graphqlTypeMeta.isEnum ? visitor.graphqlTypeMeta.name : visitor.typeName}$listClose.from((json[\'${visitor.alias ?? visitor.fieldName}\'] ?? []).map((field) => ${visitor.graphqlTypeMeta.isEnum ? '${visitor.graphqlTypeMeta.name}Values.map[field]' : visitor.graphqlTypeMeta.isScalar ? 'field' : '${visitor.typeName}.fromJson(field)'}))'
         : visitor.graphqlTypeMeta.isEnum
             ? 'json[\'${visitor.alias ?? visitor.fieldName}\'] != null ? ${visitor.graphqlTypeMeta.name}Values.map[json[\'${visitor.alias ?? visitor.fieldName}\']] : null'
             : visitor.graphqlTypeMeta.isScalar

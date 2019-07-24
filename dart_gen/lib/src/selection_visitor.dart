@@ -44,7 +44,9 @@ class SelectionVisitor extends SimpleVisitor {
 
   String get schemaDef {
     if (graphqlTypeMeta.isList) {
-      return 'List<$schemaName> ${graphqlTypeMeta.fieldName};';
+      final listOpen = List.filled(graphqlTypeMeta.listCount, 'List<').join('');
+      final listClose = List.filled(graphqlTypeMeta.listCount, '>').join('');
+      return '$listOpen$schemaName$listClose ${graphqlTypeMeta.fieldName};';
     } else {
       return '$schemaName ${graphqlTypeMeta.fieldName};';
     }

@@ -23,7 +23,7 @@ FieldMeta findDeepOfType(dynamic def) {
       isUnion = true;
     }
     if (result['kind'] == 'NON_NULL') {
-      isMaybe = true;
+      isMaybe = false;
     }
     if (result['kind'] == 'LIST') {
       isList = true;
@@ -87,7 +87,7 @@ String generateFromSelection(
       mapImpl = visitor.graphqlTypeMeta.isEnum
           ? '${visitor.graphqlTypeMeta.name}Values.reverseMap[value]'
           : 'value?.toJson()';
-      mapImpl = _generateComplexToJsonMapImpl(
+      mapImpl = generateComplexToJsonMapImpl(
           visitor.graphqlTypeMeta.listCount - 1, mapImpl);
     }
     final field = visitor.isScalar
@@ -126,7 +126,7 @@ String generateFromSelection(
               : '${visitor.typeName}.fromJson(field)';
     }
     final jsonContent = typeMeta.isList
-        ? 'List<$listType>.from((json[\'${visitor.alias ?? visitor.fieldName}\'] ?? [])${_generateComplexFromJsonMapImpl(typeMeta.listCount - 1, finalType, complexListCastType)})'
+        ? 'List<$listType>.from((json[\'${visitor.alias ?? visitor.fieldName}\'] ?? [])${generateComplexFromJsonMapImpl(typeMeta.listCount - 1, finalType, complexListCastType)})'
         : typeMeta.isEnum
             ? 'json[\'${visitor.alias ?? visitor.fieldName}\'] != null ? ${typeMeta.name}Values.map[json[\'${visitor.alias ?? visitor.fieldName}\']] : null'
             : typeMeta.isScalar
@@ -249,19 +249,18 @@ String generateUnions(Map<String, dynamic> typemeta, String unionTypeName,
   ''';
 }
 
-String _generateComplexToJsonMapImpl(int listCount, String mapImpl) {
+String generateComplexToJsonMapImpl(int listCount, String mapImpl) {
   if (listCount == 0) {
     return '.map((value) => $mapImpl)';
   }
-  return '.map((value$listCount) => value$listCount?${_generateComplexToJsonMapImpl(listCount - 1, mapImpl)})';
+  return '.map((value$listCount) => value$listCount?${generateComplexToJsonMapImpl(listCount - 1, mapImpl)})';
 }
 
-String _generateComplexFromJsonMapImpl(
-    int listCount, String type, String impl) {
+String generateComplexFromJsonMapImpl(int listCount, String type, String impl) {
   if (listCount == 0) {
     return '.map((field) => $impl)';
   }
   final levelType =
       '${List.filled(listCount - 1, 'List<').join('')}$type${List.filled(listCount - 1, '>').join('')}';
-  return '.map((field$listCount) => List<$levelType>.from(field$listCount${_generateComplexFromJsonMapImpl(listCount - 1, type, impl)}))';
+  return '.map((field$listCount) => List<$levelType>.from(field$listCount${generateComplexFromJsonMapImpl(listCount - 1, type, impl)}))';
 }

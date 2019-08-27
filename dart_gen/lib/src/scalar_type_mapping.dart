@@ -7,4 +7,5 @@ const Map<String, String> scalarTypeMapping = {
   'UUID': 'String',
   'Float': 'double',
   'DateTime': 'String',
+  'Date': 'String',
 };

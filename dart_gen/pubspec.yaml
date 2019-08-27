@@ -1,6 +1,6 @@
 name: dart_gen
 description: Generate dart codes from graphql ast.
-version: 0.1.27
+version: 0.1.28
 homepage: https://github.com/Brooooooklyn/graphql_codegen
 author: LongYinan <lynweklm@gmail.com>
 
@@ -8,11 +8,11 @@ environment:
   sdk: '>=2.3.0 <3.0.0'
 
 dependencies:
-  dart_style: ^1.0.0
+  dart_style: ^1.2.9
   glob: ^1.1.7
-  graphql_ast_visitor: ^0.1.4
+  graphql_ast_visitor: ^0.1.5
   path: ^1.6.2
-  http: ^0.12.0
+  http: ^0.12.0+2
 
 dev_dependencies:
   pedantic: ^1.0.0

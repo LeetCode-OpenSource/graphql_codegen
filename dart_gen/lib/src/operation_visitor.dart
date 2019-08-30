@@ -37,16 +37,19 @@ class OperationVisitor extends SimpleVisitor {
     final fieldDeclarion = defination.variableDefinition.map((variable) {
       final typeName = variable.type.source();
       final String gqlTypeName = typeMap[typeName]['name'];
-      final String dartType = typeMap[typeName]['kind'] == 'SCALAR'
-          ? scalarTypeMapping[gqlTypeName]
-          : gqlTypeName;
+      final isScalar = typeMap[typeName]['kind'] == 'SCALAR';
+      final String dartType =
+          isScalar ? scalarTypeMapping[gqlTypeName] : gqlTypeName;
       return '${variable.isList ? 'List<$dartType>' : dartType} ${variable.variable.name};';
     }).join('\n');
     final toJsonImpl = defination.variableDefinition.map((variable) {
       final typeName = variable.type.source();
+      final isScalar = typeMap[typeName]['kind'] == 'SCALAR';
       final field = typeMap[typeName]['kind'] == 'ENUM'
           ? '${typeName}Values.reverseMap[${variable.variable.name}]'
-          : variable.variable.name;
+          : isScalar
+              ? variable.variable.name
+              : '${variable.variable.name}.toJson()';
       return '\'${variable.variable.name}\': $field';
     }).join(',\n');
     return '''

@@ -51,8 +51,9 @@ class DocumentVisitor extends SimpleVisitor {
                 fieldMeta.isList ? 'field' : 'json[\'${fieldMeta.fieldName}\']';
             _fromJson =
                 '${fieldMeta.name}Values.map[${fieldMeta.isList ? 'field' : fieldName}]';
-            _toJson =
-                '${fieldMeta.fieldName} != null ? ${fieldMeta.name}Values.reverseMap[${fieldMeta.isList ? 'value' : fieldMeta.fieldName}] : null';
+            _toJson = fieldMeta.isList
+                ? '${fieldMeta.name}Values.reverseMap[value]'
+                : '${fieldMeta.fieldName} != null ? ${fieldMeta.name}Values.reverseMap[${fieldMeta.fieldName}] : null';
           } else if (fieldMeta.isUnion) {
             print('Not support union field in INPUT_OBJECT');
           } else {

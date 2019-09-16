@@ -49,7 +49,9 @@ class OperationVisitor extends SimpleVisitor {
           ? '${typeName}Values.reverseMap[${variable.variable.name}]'
           : isScalar
               ? variable.variable.name
-              : '${variable.variable.name}.toJson()';
+              : variable.isList
+                  ? '${variable.variable.name}${generateComplexToJsonMapImpl(variable.listCount - 1, isScalar ? 'value' : 'value?.toJson()')}'
+                  : '${variable.variable.name}.toJson()';
       return '\'${variable.variable.name}\': $field';
     }).join(',\n');
     return '''

@@ -6,9 +6,11 @@ TypeMeta getTypeMeta(TypeContext type) {
   dynamic variableDef = type;
   var isNullable = false;
   var isList = false;
+  var listCount = 0;
   while (true) {
     if (variableDef is ListTypeContext) {
       isList = true;
+      listCount += 1;
       if (variableDef.type != null) {
         variableDef = variableDef.type;
       } else {
@@ -23,5 +25,5 @@ TypeMeta getTypeMeta(TypeContext type) {
       }
     }
   }
-  return TypeMeta(isList, isNullable, variableDef.typeName);
+  return TypeMeta(isList, listCount, isNullable, variableDef.typeName);
 }

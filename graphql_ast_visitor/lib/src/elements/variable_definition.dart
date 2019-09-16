@@ -19,6 +19,7 @@ class VariableDefinitionElement extends Element {
       final typeMeta = getTypeMeta(_variableDefination.type);
       isNullable = typeMeta.isNullable;
       isList = typeMeta.isList;
+      listCount = typeMeta.listCount;
       _type = NamedTypeElement(typeMeta.typeName);
     }
 
@@ -55,6 +56,8 @@ class VariableDefinitionElement extends Element {
   bool isNullable = false;
 
   bool isList = false;
+
+  int listCount = 0;
 
   @override
   String source() {

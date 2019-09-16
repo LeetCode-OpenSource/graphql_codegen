@@ -65,7 +65,7 @@ class DocumentVisitor extends SimpleVisitor {
             _toJson = fieldMeta.isScalar
                 ? _toJson
                 : 'List<dynamic>.from(${fieldMeta.fieldName} ?? [])${generateComplexToJsonMapImpl(
-                    fieldMeta.listCount - 1,
+                    listCount - 1,
                     _toJson,
                   )}.toList()';
             final complexListCastType = fieldMeta.isEnum

@@ -49,16 +49,19 @@ class DocumentVisitor extends SimpleVisitor {
           } else if (fieldMeta.isEnum) {
             final fieldName =
                 fieldMeta.isList ? 'field' : 'json[\'${fieldMeta.fieldName}\']';
-            _fromJson = '${fieldMeta.name}Values.map[$fieldName]';
+            _fromJson =
+                '${fieldMeta.name}Values.map[${fieldMeta.isList ? 'field' : fieldName}]';
             _toJson =
-                '${fieldMeta.fieldName} != null ? ${fieldMeta.name}Values.reverseMap[${fieldMeta.fieldName}] : null';
+                '${fieldMeta.fieldName} != null ? ${fieldMeta.name}Values.reverseMap[${fieldMeta.isList ? 'value' : fieldMeta.fieldName}] : null';
           } else if (fieldMeta.isUnion) {
             print('Not support union field in INPUT_OBJECT');
           } else {
             final fieldName = fieldMeta.isList ? 'value' : fieldMeta.fieldName;
-            _fromJson =
-                '${fieldMeta.name}.fromJson(json[\'${fieldMeta.fieldName}\'])';
-            _toJson = '$fieldName?.toJson()';
+            _fromJson = fieldMeta.isList
+                ? '${fieldMeta.name}.fromJson(field)'
+                : '${fieldMeta.name}.fromJson(json[\'${fieldMeta.fieldName}\'])';
+            _toJson =
+                fieldMeta.isList ? 'value?.toJson()' : '$fieldName?.toJson()';
           }
           if (fieldMeta.isList) {
             final listCount = fieldMeta.listCount;

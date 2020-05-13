@@ -125,12 +125,15 @@ String generateFromSelection(
               ? 'field as $finalType'
               : '${visitor.typeName}.fromJson(field)';
     }
+    final scalarString = visitor.schemaName == 'double'
+      ? 'double.tryParse(json[\'${visitor.alias ?? visitor.fieldName}\'].toString())'
+      : 'json[\'${visitor.alias ?? visitor.fieldName}\']';
     final jsonContent = typeMeta.isList
         ? 'List<$listType>.from((json[\'${visitor.alias ?? visitor.fieldName}\'] ?? [])${generateComplexFromJsonMapImpl(typeMeta.listCount - 1, finalType, complexListCastType)})'
         : typeMeta.isEnum
             ? 'json[\'${visitor.alias ?? visitor.fieldName}\'] != null ? ${typeMeta.name}Values.map[json[\'${visitor.alias ?? visitor.fieldName}\']] : null'
             : typeMeta.isScalar
-                ? 'json[\'${visitor.alias ?? visitor.fieldName}\']'
+                ? scalarString
                 : '${visitor.schemaName}.fromJson(json[\'${visitor.alias ?? visitor.fieldName}\'])';
     return '${visitor.fieldName}: $jsonContent';
   }).join(',\n');
